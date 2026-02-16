@@ -516,6 +516,12 @@ function openModal(src, type) {
 function closeModal() {
     const modal = document.getElementById('modal');
     if (modal) {
+        // Pause any playing videos in the modal
+        const video = modal.querySelector('video');
+        if (video) {
+            video.pause();
+            video.currentTime = 0; // Reset to beginning
+        }
         modal.classList.remove('active');
     }
 }

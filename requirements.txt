@@ -1,0 +1,14 @@
+# Python Requirements for Tet Website Optimization Scripts
+# Install with: pip install -r requirements.txt --break-system-packages
+
+# Core image processing
+Pillow>=10.0.0
+
+# HEIC support (iPhone images)
+# Optional but recommended for processing iPhone photos
+pillow-heif>=0.13.0
+
+# Note: pillow-heif requires system library libheif
+# On Linux/Ubuntu: sudo apt-get install libheif-dev
+# On macOS: brew install libheif (usually included)
+# On Windows: Usually works out of the box

@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """
 Rename all images and videos to sequential numbers
-Images: 1.jpg, 2.jpg, 3.png, etc.
+Images: 1.jpg, 2.jpg, 3.png, 4.heic, etc.
 Videos: 1.MP4, 2.MP4, etc.
+Supports HEIC/HEIF format (iPhone images)
 """
 
 import os
@@ -64,8 +65,9 @@ if __name__ == "__main__":
     print("🎨 Renaming Images and Videos")
     print("=" * 50)
 
-    # Rename images
-    image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'JPG', 'JPEG', 'PNG']
+    # Rename images (including HEIC/HEIF from iPhone)
+    # Note: Script automatically handles uppercase versions
+    image_extensions = ['jpg', 'jpeg', 'png', 'gif', 'heic', 'heif']
     images = rename_files('images', image_extensions)
 
     # Rename videos
