@@ -38,16 +38,18 @@ def optimize_image(image_path, output_dir):
 
         # Generate multiple sizes
         for size in SIZES:
-            # Skip if original is smaller than target size
+            # Use original dimensions if image is smaller than target size
+            # This ensures all images have consistent file sets without upscaling
             if original_width < size:
-                continue
-
-            # Calculate new dimensions
-            new_width = size
-            new_height = int(size * aspect_ratio)
-
-            # Resize image
-            resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+                # Use original size instead of upscaling
+                # Create a copy to avoid modifying the original
+                resized = img.copy()
+            else:
+                # Calculate new dimensions for downscaling
+                new_width = size
+                new_height = int(size * aspect_ratio)
+                # Resize image
+                resized = img.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
             # Save as WebP
             output_path = os.path.join(output_dir, f"{img_name}_{size}w.webp")

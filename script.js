@@ -11,6 +11,7 @@ const CONFIG = {
     imagesPerPage: 20,
     videosPerPage: 20,
     useWebP: true, // Set to true after running optimize-images.py
+    useOptimizedVideos: true, // Set to true after running optimize-videos.py
     imageSizes: [480, 960, 1440], // Responsive image sizes
 };
 
@@ -345,14 +346,23 @@ function renderVideoGallery() {
     for (let i = startIndex; i <= endIndex; i++) {
         const item = document.createElement('div');
         item.className = 'gallery-item';
-        item.onclick = () => openModal(`videos/${i}.MP4`, 'video');
 
-        // Create video with thumbnail preview
+        // Use optimized video if available, otherwise use original
+        const videoSrc = CONFIG.useOptimizedVideos
+            ? `videos-optimized/${i}.mp4`
+            : `videos/${i}.MP4`;
+
+        const originalSrc = `videos/${i}.MP4`;
+
+        item.onclick = () => openModal(videoSrc, 'video');
+
+        // Create video with thumbnail preview and lazy loading
         item.innerHTML = `
             <video
-                src="videos/${i}.MP4"
+                src="${videoSrc}"
                 muted
                 preload="metadata"
+                playsinline
                 style="opacity: 1;"
             ></video>
             <div class="gallery-caption"
