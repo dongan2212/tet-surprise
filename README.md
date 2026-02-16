@@ -212,26 +212,6 @@ Replace the color codes with your preferred colors. Use [ColorPicker](https://ht
 - Food dates
 - Seasonal memories
 
----
-
-## 🐛 Troubleshooting
-
-**Problem**: Images don't show up
-**Solution**: Make sure image URLs are correct or images are in the right folder
-
-**Problem**: Music doesn't play
-**Solution**:
-- Check that `tet-music.mp3` is in the same folder as `index.html`
-- Click the music button to enable it (browsers block auto-play)
-
-**Problem**: Password doesn't work
-**Solution**: Make sure you changed it correctly in the JavaScript section
-
-**Problem**: Website looks broken on mobile
-**Solution**: The website is fully responsive, but test it by opening on your phone
-
----
-
 ## 💌 Final Message
 
 This website was created with love and care for Ly Thao. Every element is designed to convey deep emotion and celebrate your special relationship.
