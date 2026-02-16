@@ -10,7 +10,7 @@ echo ""
 rm -f .git/index.lock 2>/dev/null
 
 # Configure Git
-git config user.name "Daniel Ngan"
+git config user.name "Daniel Vo"
 git config user.email "dongan2212@gmail.com"
 
 # Stage all changes
@@ -29,8 +29,6 @@ Updates:
 - Countdown-locked surprise section
 - 14 personal videos in video gallery
 - Mobile responsive design
-
-Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>"
 
 # Push to GitHub
 echo "🚀 Pushing to GitHub..."
