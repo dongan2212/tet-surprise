@@ -23,6 +23,7 @@ let state = {
     currentVideoPage: 1,
     imagesPerPage: CONFIG.imagesPerPage,
     videosPerPage: CONFIG.videosPerPage,
+    musicAutoPlayHandlerAdded: false,
 };
 
 // ============================================================================
@@ -59,20 +60,55 @@ function unlockContent() {
     startCountdown();
     startTypingEffect();
 
-    // Autoplay music after unlocking
+    // Try to autoplay music after user interaction (password submission) or for returning users
     setTimeout(() => {
         const music = document.getElementById('bg-music');
         const toggle = document.getElementById('music-toggle');
         const icon = document.getElementById('music-icon');
 
-        music.play().then(() => {
-            state.musicPlaying = true;
-            toggle.classList.add('playing');
-            icon.textContent = '🔊';
-        }).catch(err => {
-            console.log('Autoplay prevented by browser:', err);
-        });
-    }, 1000);
+        if (!music) return;
+
+        // Set volume to a reasonable level
+        music.volume = 0.7;
+
+        // Try to play - this works after password submission (user interaction)
+        // For returning users, some browsers may allow autoplay if user has interacted before
+        const playPromise = music.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                state.musicPlaying = true;
+                if (toggle) toggle.classList.add('playing');
+                if (icon) icon.textContent = '🔊';
+            }).catch(err => {
+                // If autoplay fails, set up a one-time click handler to start music on first interaction
+                // This is for returning users who load the page without interaction
+                if (!state.musicAutoPlayHandlerAdded) {
+                    state.musicAutoPlayHandlerAdded = true;
+                    
+                    const startMusicOnInteraction = () => {
+                        music.play().then(() => {
+                            state.musicPlaying = true;
+                            if (toggle) toggle.classList.add('playing');
+                            if (icon) icon.textContent = '🔊';
+                        }).catch(() => {
+                            // Still failed, user will need to click music button
+                        });
+                        
+                        // Remove the handler after first use
+                        document.removeEventListener('click', startMusicOnInteraction);
+                        document.removeEventListener('touchstart', startMusicOnInteraction);
+                        document.removeEventListener('scroll', startMusicOnInteraction);
+                    };
+                    
+                    // Add listeners for various user interactions
+                    document.addEventListener('click', startMusicOnInteraction, { once: true });
+                    document.addEventListener('touchstart', startMusicOnInteraction, { once: true });
+                    document.addEventListener('scroll', startMusicOnInteraction, { once: true });
+                }
+                state.musicPlaying = false;
+            });
+        }
+    }, 500);
 }
 
 function checkPassword() {
@@ -104,6 +140,21 @@ document.addEventListener('DOMContentLoaded', () => {
             if (e.key === 'Enter') checkPassword();
         });
     }
+
+        // Setup audio to replay when it ends (backup to loop attribute)
+        const music = document.getElementById('bg-music');
+        if (music) {
+            music.addEventListener('ended', () => {
+                // Ensure audio replays even if loop attribute doesn't work
+                music.currentTime = 0;
+                music.play().catch(err => {
+                    console.log('Auto-replay prevented:', err);
+                });
+            });
+
+            // Note: Autoplay for returning users is handled in unlockContent()
+            // which sets up interaction handlers if direct autoplay fails
+        }
 });
 
 // ============================================================================
@@ -152,6 +203,8 @@ function createPetals() {
 // COUNTDOWN TIMER
 // ============================================================================
 
+let celebrationTriggered = false;
+
 function startCountdown() {
     setInterval(() => {
         const now = new Date().getTime();
@@ -167,11 +220,99 @@ function startCountdown() {
         const minutesEl = document.getElementById('minutes');
         const secondsEl = document.getElementById('seconds');
 
-        if (daysEl) daysEl.textContent = days;
-        if (hoursEl) hoursEl.textContent = hours;
-        if (minutesEl) minutesEl.textContent = minutes;
-        if (secondsEl) secondsEl.textContent = seconds;
+        if (distance <= 0) {
+            // Countdown finished!
+            if (daysEl) daysEl.textContent = '0';
+            if (hoursEl) hoursEl.textContent = '0';
+            if (minutesEl) minutesEl.textContent = '0';
+            if (secondsEl) secondsEl.textContent = '0';
+
+            // Trigger New Year celebration only once
+            if (!celebrationTriggered) {
+                celebrationTriggered = true;
+                triggerNewYearCelebration();
+            }
+        } else {
+            if (daysEl) daysEl.textContent = days;
+            if (hoursEl) hoursEl.textContent = hours;
+            if (minutesEl) minutesEl.textContent = minutes;
+            if (secondsEl) secondsEl.textContent = seconds;
+        }
     }, 1000);
+}
+
+function triggerNewYearCelebration() {
+    // Create massive fireworks display
+    for (let i = 0; i < 100; i++) {
+        setTimeout(() => createFirework(), i * 150);
+    }
+
+    // Launch confetti waves
+    for (let wave = 0; wave < 5; wave++) {
+        setTimeout(() => {
+            confetti({
+                particleCount: 150,
+                spread: 120,
+                origin: { x: 0.5, y: 0.6 }
+            });
+
+            // Add side confetti
+            confetti({
+                particleCount: 100,
+                spread: 100,
+                origin: { x: 0.2, y: 0.7 }
+            });
+
+            confetti({
+                particleCount: 100,
+                spread: 100,
+                origin: { x: 0.8, y: 0.7 }
+            });
+        }, wave * 1000);
+    }
+
+    // Show celebration message
+    const countdownSection = document.getElementById('countdown');
+    if (countdownSection) {
+        const celebrationBanner = document.createElement('div');
+        celebrationBanner.style.cssText = `
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, var(--deep-red) 0%, var(--dark-red) 100%);
+            color: white;
+            padding: 3rem 4rem;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+            z-index: 9998;
+            text-align: center;
+            font-family: 'Playfair Display', serif;
+            animation: fadeInScale 1s ease-out;
+        `;
+
+        const messages = {
+            vi: '🎊 Chúc Mừng Năm Mới 2026! 🎊',
+            en: '🎊 Happy New Year 2026! 🎊',
+            ko: '🎊 새해 복 많이 받으세요 2026! 🎊'
+        };
+
+        celebrationBanner.innerHTML = `
+            <h2 style="font-size: 2.5rem; margin-bottom: 1rem; text-shadow: 0 0 20px rgba(255, 215, 0, 0.5);">
+                ${messages[state.currentLang] || messages.vi}
+            </h2>
+            <p style="font-size: 1.2rem; opacity: 0.9;">✨ Happy Lunar New Year! ✨</p>
+        `;
+
+        document.body.appendChild(celebrationBanner);
+
+        // Remove banner after 8 seconds
+        setTimeout(() => {
+            celebrationBanner.style.opacity = '0';
+            celebrationBanner.style.transition = 'opacity 1s';
+            setTimeout(() => celebrationBanner.remove(), 1000);
+        }, 8000);
+    }
 }
 
 // ============================================================================
