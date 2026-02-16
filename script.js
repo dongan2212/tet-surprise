@@ -316,8 +316,12 @@ function renderImageGallery() {
     // Clear grid
     grid.innerHTML = '';
 
-    // Generate gallery items using FOR LOOP
-    for (let i = startIndex; i <= endIndex; i++) {
+    // Calculate reverse indices (show newest first)
+    const reverseEndIndex = CONFIG.totalImages - startIndex + 1;
+    const reverseStartIndex = CONFIG.totalImages - endIndex + 1;
+
+    // Generate gallery items using FOR LOOP (in reverse order)
+    for (let i = reverseEndIndex; i >= reverseStartIndex; i--) {
         const item = document.createElement('div');
         item.className = 'gallery-item';
 
@@ -376,8 +380,12 @@ function renderVideoGallery() {
     // Clear grid
     grid.innerHTML = '';
 
-    // Generate gallery items using FOR LOOP
-    for (let i = startIndex; i <= endIndex; i++) {
+    // Calculate reverse indices (show newest first)
+    const reverseEndIndex = CONFIG.totalVideos - startIndex + 1;
+    const reverseStartIndex = CONFIG.totalVideos - endIndex + 1;
+
+    // Generate gallery items using FOR LOOP (in reverse order)
+    for (let i = reverseEndIndex; i >= reverseStartIndex; i--) {
         const item = document.createElement('div');
         item.className = 'gallery-item';
 
