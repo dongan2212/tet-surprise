@@ -6,7 +6,7 @@
 const CONFIG = {
     password: "13142000",
     lunarNewYear: new Date('2026-02-17T00:00:00').getTime(),
-    totalImages: 485,
+    totalImages: 993,
     totalVideos: 41,
     imagesPerPage: 20,
     videosPerPage: 20,
@@ -257,6 +257,32 @@ function setupLazyLoading() {
 // GALLERY GENERATION WITH FOR LOOPS
 // ============================================================================
 
+// Helper function to try alternative image extensions when image fails to load
+function tryAlternativeExtension(img, imageNum, remainingExtensions) {
+    if (remainingExtensions.length === 0) {
+        console.warn(`Could not find image ${imageNum} with any extension`);
+        img.style.opacity = 0.3; // Show it's missing
+        return;
+    }
+
+    const nextExt = remainingExtensions[0];
+    const newExtensions = remainingExtensions.slice(1);
+
+    img.onerror = () => tryAlternativeExtension(img, imageNum, newExtensions);
+    img.src = `images/${imageNum}.${nextExt}`;
+
+    // Also update data-src for lazy loading
+    if (img.dataset.src) {
+        img.dataset.src = `images/${imageNum}.${nextExt}`;
+    }
+}
+
+// Helper function to get image path with correct extension
+function getImagePath(imageNum) {
+    // Default to JPG, fallback will handle other extensions
+    return `images/${imageNum}.JPG`;
+}
+
 function generateImageSrcSet(imageNum) {
     if (CONFIG.useWebP) {
         // Use optimized WebP images with multiple sizes
@@ -269,9 +295,9 @@ function generateImageSrcSet(imageNum) {
             sizes: '(max-width: 640px) 480px, (max-width: 1024px) 960px, 1440px'
         };
     } else {
-        // Fallback to original JPG
+        // Fallback to original image with extension detection
         return {
-            src: `images/${imageNum}.JPG`,
+            src: getImagePath(imageNum),
             srcset: '',
             sizes: ''
         };
@@ -294,11 +320,18 @@ function renderImageGallery() {
     for (let i = startIndex; i <= endIndex; i++) {
         const item = document.createElement('div');
         item.className = 'gallery-item';
-        item.onclick = () => openModal(`images/${i}.JPG`, 'photo');
+
+        // Store the image number for modal opening
+        item.setAttribute('data-img-num', i);
+        item.onclick = function() {
+            const imgNum = this.getAttribute('data-img-num');
+            const img = this.querySelector('img');
+            openModal(img.src || `images/${imgNum}.JPG`, 'photo');
+        };
 
         const imgData = generateImageSrcSet(i);
 
-        // Create image with lazy loading
+        // Create image with lazy loading and fallback for different extensions
         item.innerHTML = `
             <img
                 data-src="${imgData.src}"
@@ -308,6 +341,7 @@ function renderImageGallery() {
                 loading="lazy"
                 style="opacity: 0; transition: opacity 0.3s;"
                 onload="this.style.opacity=1"
+                onerror="tryAlternativeExtension(this, ${i}, ['jpg', 'PNG', 'png', 'HEIC', 'heic'])"
             >
             <div class="gallery-caption"
                  data-vi="Khoảnh khắc ${i}"
@@ -515,15 +549,24 @@ function openModal(src, type) {
 
 function closeModal() {
     const modal = document.getElementById('modal');
-    if (modal) {
-        // Pause any playing videos in the modal
-        const video = modal.querySelector('video');
-        if (video) {
-            video.pause();
-            video.currentTime = 0; // Reset to beginning
-        }
-        modal.classList.remove('active');
+    const content = document.getElementById('modal-content');
+    if (!modal) return;
+
+    // Pause any playing videos in the modal
+    const video = modal.querySelector('video');
+    if (video) {
+        video.pause();
+        video.currentTime = 0;
+        video.src = ''; // Clear the source to fully stop it
     }
+
+    // Remove active class
+    modal.classList.remove('active');
+
+    // Clear content after transition (300ms)
+    setTimeout(() => {
+        if (content) content.innerHTML = '';
+    }, 300);
 }
 
 // ============================================================================
