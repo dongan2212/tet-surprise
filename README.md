@@ -20,7 +20,7 @@ A beautiful, romantic single-page website celebrating Vietnamese Lunar New Year 
 ## 🚀 How to Use
 
 1. **Open the website**: Simply double-click `index.html` or open it in a web browser
-2. **Enter password**: Default password is `lythao2026`
+2. **Enter password**: Default password is `13142000`
 3. **Switch language**: Click VI/EN buttons in the top right corner
 4. **Explore all sections**: Scroll through or click the "Open My Heart" button
 
@@ -33,10 +33,10 @@ A beautiful, romantic single-page website celebrating Vietnamese Lunar New Year 
 Find this line in `index.html` (around line 643):
 
 ```javascript
-const correctPassword = "lythao2026"; // Change this to your desired password
+const correctPassword = "13142000"; // Change this to your desired password
 ```
 
-Change `"lythao2026"` to your preferred password.
+Change `"13142000"` to your preferred password.
 
 ---
 
