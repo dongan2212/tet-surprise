@@ -10,7 +10,7 @@ const CONFIG = {
     totalVideos: 41,
     imagesPerPage: 20,
     videosPerPage: 20,
-    useWebP: false, // Set to true after running optimize-images.py
+    useWebP: true, // Set to true after running optimize-images.py
     imageSizes: [480, 960, 1440], // Responsive image sizes
 };
 
@@ -25,33 +25,62 @@ let state = {
 };
 
 // ============================================================================
-// PASSWORD PROTECTION
+// PASSWORD PROTECTION WITH 24H PERSISTENCE
 // ============================================================================
+
+function saveLogin() {
+    const now = new Date().getTime();
+    const expiryTime = now + (24 * 60 * 60 * 1000); // 24 hours from now
+    localStorage.setItem('loginTimestamp', expiryTime.toString());
+}
+
+function checkLoginStatus() {
+    const loginTimestamp = localStorage.getItem('loginTimestamp');
+    if (loginTimestamp) {
+        const now = new Date().getTime();
+        const expiry = parseInt(loginTimestamp);
+
+        if (now < expiry) {
+            // Login still valid
+            return true;
+        } else {
+            // Login expired, clear it
+            localStorage.removeItem('loginTimestamp');
+            return false;
+        }
+    }
+    return false;
+}
+
+function unlockContent() {
+    document.getElementById('password-screen').classList.add('hidden');
+    createPetals();
+    startCountdown();
+    startTypingEffect();
+
+    // Autoplay music after unlocking
+    setTimeout(() => {
+        const music = document.getElementById('bg-music');
+        const toggle = document.getElementById('music-toggle');
+        const icon = document.getElementById('music-icon');
+
+        music.play().then(() => {
+            state.musicPlaying = true;
+            toggle.classList.add('playing');
+            icon.textContent = '🔊';
+        }).catch(err => {
+            console.log('Autoplay prevented by browser:', err);
+        });
+    }, 1000);
+}
 
 function checkPassword() {
     const input = document.getElementById('password-input').value;
     const error = document.getElementById('password-error');
 
     if (input === CONFIG.password) {
-        document.getElementById('password-screen').classList.add('hidden');
-        createPetals();
-        startCountdown();
-        startTypingEffect();
-
-        // Autoplay music after unlocking
-        setTimeout(() => {
-            const music = document.getElementById('bg-music');
-            const toggle = document.getElementById('music-toggle');
-            const icon = document.getElementById('music-icon');
-
-            music.play().then(() => {
-                state.musicPlaying = true;
-                toggle.classList.add('playing');
-                icon.textContent = '🔊';
-            }).catch(err => {
-                console.log('Autoplay prevented by browser:', err);
-            });
-        }, 1000);
+        saveLogin(); // Save login to localStorage with 24h expiry
+        unlockContent();
     } else {
         error.style.display = 'block';
         setTimeout(() => {
@@ -60,8 +89,14 @@ function checkPassword() {
     }
 }
 
-// Press Enter to submit password
+// Press Enter to submit password & Check for existing login on page load
 document.addEventListener('DOMContentLoaded', () => {
+    // Check if user has valid login from last 24 hours
+    if (checkLoginStatus()) {
+        unlockContent();
+    }
+
+    // Add enter key listener
     const passwordInput = document.getElementById('password-input');
     if (passwordInput) {
         passwordInput.addEventListener('keypress', (e) => {
@@ -89,6 +124,9 @@ function setLanguage(lang) {
             }
         }
     });
+
+    // Restart typing effect with new language
+    restartTypingEffect();
 }
 
 // ============================================================================
@@ -139,27 +177,44 @@ function startCountdown() {
 // TYPING EFFECT
 // ============================================================================
 
+let typingTimeout = null;
+let typingIndex = 0;
+let typingText = '';
+
 function startTypingEffect() {
+    restartTypingEffect();
+}
+
+function restartTypingEffect() {
     const messages = {
-        vi: "Mỗi lần được trò chuyện với em, mình lại thấy vui và thoải mái biết bao. Em không chỉ là người bạn tốt, mà còn là người khiến những ngày bình thường trở nên đặc biệt hơn. 💕",
-        en: "Every time we talk, I feel so happy and comfortable. You're not just a good friend, but someone who makes ordinary days feel special. 💕",
-        ko: "우리가 이야기할 때마다 나는 너무 행복하고 편안함을 느낍니다. 당신은 좋은 친구일 뿐만 아니라 평범한 날을 특별하게 만드는 사람입니다. 💕"
+        vi: "Chú thật sự cảm thấy biết ơn vì cuộc đời đã cho chú gặp được em. Em không chỉ là điều kì diệu, mà còn là người làm cho cuộc sống của chú trở nên ý nghĩa và đáng sống hơn rất nhiều. 💕",
+        en: "I truly feel grateful that life brought you to me. You're not just a miracle, but someone who makes my life so much more meaningful and worth living. 💕",
+        ko: "인생이 너를 만나게 해줘서 정말 감사해. 너는 기적일 뿐만 아니라 내 삶을 훨씬 더 의미있고 살 가치있게 만드는 사람이야. 💕"
     };
 
-    let text = messages[state.currentLang];
-    let index = 0;
     const element = document.getElementById('typed-message');
     if (!element) return;
 
+    // Clear any existing typing animation
+    if (typingTimeout) {
+        clearTimeout(typingTimeout);
+    }
+
+    // Reset state
+    typingText = messages[state.currentLang] || messages.vi;
+    typingIndex = 0;
+    element.textContent = '';
+
     function type() {
-        if (index < text.length) {
-            element.textContent += text.charAt(index);
-            index++;
-            setTimeout(type, 50);
+        if (typingIndex < typingText.length) {
+            element.textContent += typingText.charAt(typingIndex);
+            typingIndex++;
+            typingTimeout = setTimeout(type, 50);
         }
     }
 
-    setTimeout(type, 2000);
+    // Start typing after a short delay
+    typingTimeout = setTimeout(type, 2000);
 }
 
 // ============================================================================
@@ -292,13 +347,13 @@ function renderVideoGallery() {
         item.className = 'gallery-item';
         item.onclick = () => openModal(`videos/${i}.MP4`, 'video');
 
-        // Create video with lazy loading
+        // Create video with thumbnail preview
         item.innerHTML = `
             <video
-                data-src="videos/${i}.MP4"
+                src="videos/${i}.MP4"
                 muted
-                loading="lazy"
-                preload="none"
+                preload="metadata"
+                style="opacity: 1;"
             ></video>
             <div class="gallery-caption"
                  data-vi="Video ${i}"
@@ -349,16 +404,16 @@ function renderPaginationButtons(container, currentPage, totalPages, type) {
         border-color: var(--deep-red);
     `;
 
-    // Previous button
+    // First button
     if (currentPage > 1) {
-        const prev = document.createElement('button');
-        prev.style.cssText = buttonStyle;
-        prev.innerHTML = '← Trước';
-        prev.setAttribute('data-vi', '← Trước');
-        prev.setAttribute('data-en', '← Previous');
-        prev.setAttribute('data-ko', '← 이전');
-        prev.onclick = () => changePage(type, currentPage - 1);
-        container.appendChild(prev);
+        const first = document.createElement('button');
+        first.style.cssText = buttonStyle;
+        first.innerHTML = '← Đầu';
+        first.setAttribute('data-vi', '← Đầu');
+        first.setAttribute('data-en', '← First');
+        first.setAttribute('data-ko', '← 처음');
+        first.onclick = () => changePage(type, 1);
+        container.appendChild(first);
     }
 
     // Page numbers (show max 5 pages)
@@ -373,16 +428,16 @@ function renderPaginationButtons(container, currentPage, totalPages, type) {
         container.appendChild(btn);
     }
 
-    // Next button
+    // Last button
     if (currentPage < totalPages) {
-        const next = document.createElement('button');
-        next.style.cssText = buttonStyle;
-        next.innerHTML = 'Tiếp →';
-        next.setAttribute('data-vi', 'Tiếp →');
-        next.setAttribute('data-en', 'Next →');
-        next.setAttribute('data-ko', '다음 →');
-        next.onclick = () => changePage(type, currentPage + 1);
-        container.appendChild(next);
+        const last = document.createElement('button');
+        last.style.cssText = buttonStyle;
+        last.innerHTML = 'Cuối →';
+        last.setAttribute('data-vi', 'Cuối →');
+        last.setAttribute('data-en', 'Last →');
+        last.setAttribute('data-ko', '마지막 →');
+        last.onclick = () => changePage(type, totalPages);
+        container.appendChild(last);
     }
 
     updateGalleryLanguage();
